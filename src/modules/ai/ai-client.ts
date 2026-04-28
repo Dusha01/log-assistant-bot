@@ -62,12 +62,12 @@ function parseStructuredContent(content: unknown): AiSecurityReport {
     return content as AiSecurityReport;
   }
 
-  throw new Error("OpenRouter returned unsupported message content format");
+  throw new Error("AI provider returned unsupported message content format");
 }
 
 export async function analyzeRawLogs(rawLogs: string[]): Promise<AiSecurityReport> {
   if (!config.openAIKey) {
-    throw new Error("OPENROUTER_API_KEY is required for AI analysis");
+    throw new Error("AI provider is required for AI analysis");
   }
 
   const logsBlock = rawLogs.join("\n");
@@ -108,14 +108,14 @@ export async function analyzeRawLogs(rawLogs: string[]): Promise<AiSecurityRepor
     if (axios.isAxiosError(error)) {
       const status = error.response?.status ?? "unknown";
       const message = error.response?.data?.error?.message ?? error.message;
-      throw new Error(`OpenRouter request failed (${status}): ${message}`);
+      throw new Error(`AI provider request failed (${status}): ${message}`);
     }
     throw error;
   }
 
   const content = response.data?.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error("OpenRouter returned empty structured response");
+    throw new Error("AI provider returned empty structured response");
   }
 
   return parseStructuredContent(content);
