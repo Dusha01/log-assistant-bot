@@ -1,0 +1,19 @@
+services:
+  log-assistant-bot:
+    image: node:22-alpine
+    working_dir: /app
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      NGINX_LOG_ROOT: /var/log/nginx
+      STATE_FILE_PATH: /app/.log-assistant.state.json
+      REPORTS_DIR: /app
+    volumes:
+      - ..:/app
+      - /var/log/nginx:/var/log/nginx:ro
+      - log_assistant_node_modules:/app/node_modules
+    command: sh -lc "npm ci --silent && npm start"
+
+volumes:
+  log_assistant_node_modules:
