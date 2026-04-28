@@ -101,7 +101,7 @@ export async function analyzeRawLogs(rawLogs: string[]): Promise<AiSecurityRepor
           Authorization: `Bearer ${config.openAIKey}`,
           "Content-Type": "application/json"
         },
-        timeout: 60_000
+        timeout: config.openAITimeoutMs
       }
     );
   } catch (error) {

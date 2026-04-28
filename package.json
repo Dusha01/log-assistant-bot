@@ -4,8 +4,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "tsx src/core/index.ts",
-    "analyze:once": "tsx src/core/index.ts --once",
+    "start": "tsx src/core/cli.ts",
+    "analyze:once": "tsx src/core/cli.ts --once",
+    "analyze:cron": "tsx src/core/cli.ts --cron",
+    "analyze:away": "tsx src/core/cli.ts --away",
     "test": "node --test --import tsx"
   },
   "devDependencies": {
