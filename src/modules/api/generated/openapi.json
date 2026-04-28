@@ -1,0 +1,221 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "log-assistant-bot",
+		"contact": {}
+	},
+	"paths": {
+		"/reports": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"reports": {
+											"items": {
+												"properties": {
+													"path": {
+														"type": "string"
+													},
+													"name": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"path",
+													"name"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"reports"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/reports/latest": {
+			"get": {
+				"operationId": "Latest",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"report": {},
+										"path": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"report",
+										"path"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/reports/{fileName}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"report": {},
+										"path": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"report",
+										"path"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "fileName",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/health": {
+			"get": {
+				"operationId": "Health",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"ok": {
+											"type": "boolean",
+											"enum": [
+												true
+											],
+											"nullable": false
+										}
+									},
+									"required": [
+										"ok"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/analyze/once": {
+			"post": {
+				"operationId": "AnalyzeOnce",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"report": {},
+										"path": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"report",
+										"path"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/analyze/away": {
+			"post": {
+				"operationId": "AnalyzeAway",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"report": {},
+										"path": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"report",
+										"path"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": []
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/"
+		}
+	]
+}

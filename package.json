@@ -8,16 +8,26 @@
     "analyze:once": "tsx src/core/cli.ts --once",
     "analyze:cron": "tsx src/core/cli.ts --cron",
     "analyze:away": "tsx src/core/cli.ts --away",
+    "tsoa:spec": "tsoa spec",
+    "tsoa:routes": "tsoa routes",
+    "api": "npm run tsoa:spec && npm run tsoa:routes && tsx src/core/api.ts",
     "test": "node --test --import tsx"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "tsoa": "^7.0.0-alpha.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
   "dependencies": {
     "axios": "^1.15.1",
     "dotenv": "^17.4.2",
-    "node-cron": "^4.2.1"
+    "express": "^5.2.1",
+    "node-cron": "^4.2.1",
+    "reflect-metadata": "^0.2.2",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.3.6"
   }
 }

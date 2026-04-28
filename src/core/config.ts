@@ -23,6 +23,8 @@ export const config = {
   stateFilePath: env.STATE_FILE_PATH ?? path.join(process.cwd(), ".log-assistant.state.json"),
   reportsDir: env.REPORTS_DIR ?? process.cwd(),
   reportPrefix: env.REPORT_PREFIX ?? "security-report",
+  apiHost: env.API_HOST ?? "0.0.0.0",
+  apiPort: readNumberEnv(env.API_PORT, 3010),
 
   // Legacy lookback-based mode (kept for backwards compatibility)
   nginxLogFilePath: env.NGINX_LOG_FILE_PATH ?? "/var/log/nginx/access.log",
