@@ -121,6 +121,36 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsReportsController_delete: Record<string, TsoaRoute.ParameterSchema> = {
+                fileName: {"in":"path","name":"fileName","required":true,"dataType":"string"},
+        };
+        app.delete('/reports/:fileName',
+            ...(fetchMiddlewares<RequestHandler>(ReportsController)),
+            ...(fetchMiddlewares<RequestHandler>(ReportsController.prototype.delete)),
+
+            async function ReportsController_delete(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsReportsController_delete, request, response });
+
+                const controller = new ReportsController();
+
+              await templateService.apiHandler({
+                methodName: 'delete',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsHealthController_health: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/health',

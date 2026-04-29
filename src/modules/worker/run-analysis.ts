@@ -4,7 +4,6 @@ import path from "node:path";
 import { config } from "../../core/config.js";
 import { analyzeRawLogs, type AiSecurityReport } from "../ai/ai-client.js";
 import {
-  collectAwayNginxLogsFromFs,
   collectNewNginxLogsFromFs,
   type LogCollectionResult
 } from "./log-source.js";
@@ -97,11 +96,11 @@ export async function runAwayAnalysis(deps: RunOneShotDeps = {}): Promise<void> 
   const collectLogs =
     deps.collectLogs ??
     (() =>
-      collectAwayNginxLogsFromFs({
+      collectNewNginxLogsFromFs({
         rootDir: config.nginxLogRoot,
-        perFileLines: 100,
-        maxBytesPerFile: 512 * 1024,
-        maxLinesTotal: 300
+        stateFilePath: config.awayStateFilePath,
+        maxLines: config.maxLogLinesPerRun,
+        maxBytes: config.maxLogBytesPerRun
       }));
 
   await runOneShotAnalysis({ ...deps, collectLogs });

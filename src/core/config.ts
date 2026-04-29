@@ -17,12 +17,21 @@ function readNumberEnv(value: string | undefined, fallback: number): number {
   return parsed;
 }
 
+function readOptionalStringEnv(value: string | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export const config = {
-  cronSchedule: "0 */2 * * *",
+  cronSchedule: env.CRON_SCHEDULE ?? "0 */2 * * *",
   nginxLogRoot: env.NGINX_LOG_ROOT ?? "/var/log/nginx",
   stateFilePath: env.STATE_FILE_PATH ?? path.join(process.cwd(), ".log-assistant.state.json"),
+  awayStateFilePath: env.AWAY_STATE_FILE_PATH ?? path.join(process.cwd(), ".log-assistant-away.state.json"),
   reportsDir: env.REPORTS_DIR ?? process.cwd(),
   reportPrefix: env.REPORT_PREFIX ?? "security-report",
+  reportRetentionDays: readNumberEnv(env.REPORT_RETENTION_DAYS, 30),
+  reportCleanupCron: readOptionalStringEnv(env.REPORT_CLEANUP_CRON),
   apiHost: env.API_HOST ?? "0.0.0.0",
   apiPort: readNumberEnv(env.API_PORT, 3010),
 

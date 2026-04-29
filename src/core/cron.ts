@@ -1,28 +1,49 @@
 import cron from "node-cron";
 import { config } from "./config.js";
+import { cleanupOldReports } from "../modules/worker/reports-cleanup.js";
+import { tryRunWithGlobalMutex } from "../modules/worker/run-mutex.js";
 import { runOneShotAnalysis } from "../modules/worker/run-analysis.js";
 
 export async function runCron(): Promise<void> {
-  let running = false;
+  const runCleanupJob = async (): Promise<void> => {
+    const lock = await tryRunWithGlobalMutex(async () =>
+      cleanupOldReports({
+        reportsDir: config.reportsDir,
+        reportPrefix: config.reportPrefix,
+        retentionDays: config.reportRetentionDays
+      })
+    );
 
-  // Run immediately on startup, then schedule.
-  const run = async (): Promise<void> => {
-    if (running) {
+    if (!lock.acquired) {
       return;
-    }
-    running = true;
-    try {
-      await runOneShotAnalysis();
-    } finally {
-      running = false;
     }
   };
 
-  await run();
+  // Run immediately on startup, then schedule.
+  const runAnalysisJob = async (): Promise<void> => {
+    const lock = await tryRunWithGlobalMutex(async () => {
+      await runOneShotAnalysis();
+    });
+    if (!lock.acquired) {
+      return;
+    }
+
+    if (!config.reportCleanupCron) {
+      await runCleanupJob();
+    }
+  };
+
+  await runAnalysisJob();
 
   cron.schedule(config.cronSchedule, () => {
-    void run();
+    void runAnalysisJob();
   });
+
+  if (config.reportCleanupCron) {
+    cron.schedule(config.reportCleanupCron, () => {
+      void runCleanupJob();
+    });
+  }
 
   // Keep process alive. (node-cron uses timers, but explicit is clearer for container usage.)
   await new Promise<void>(() => {});
