@@ -18,7 +18,7 @@ export function formatTerminalReport(params: FormatTerminalReportParams): string
 
   lines.push("=== NGINX SECURITY ANALYSIS ===");
   lines.push(`SUSPICIOUS ACTIVITY: ${report.suspicious ? "YES" : "NO"}`);
-  lines.push(`RISK LEVEL: ${report.risk_level.toUpperCase()}`);
+  lines.push(`RISK LEVEL: ${report.riskLevel.toUpperCase()}`);
   lines.push(`LOOKBACK WINDOW: ${meta.lookbackHours} hour(s)`);
   lines.push(`LOG LINES ANALYZED: ${meta.selectedLines} of ${meta.totalLines}`);
   lines.push(`INVALID TIMESTAMP LINES SKIPPED: ${meta.invalidTimestampLines}`);
@@ -42,10 +42,10 @@ export function formatTerminalReport(params: FormatTerminalReportParams): string
 
   lines.push("");
   lines.push("RECOMMENDED ACTIONS:");
-  if (report.recommended_actions.length === 0) {
+  if (report.recommendedActions.length === 0) {
     lines.push("- No immediate actions");
   } else {
-    report.recommended_actions.forEach((action) => lines.push(`- ${action}`));
+    report.recommendedActions.forEach((action) => lines.push(`- ${action}`));
   }
 
   return lines.join("\n");

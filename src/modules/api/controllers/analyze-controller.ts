@@ -1,11 +1,9 @@
 import { Controller, Post, Route } from "tsoa";
-import { z } from "zod";
 
+import { AnalyzeModeSchema } from "../schemas.js";
 import { runAwayAnalysis, runOneShotAnalysis } from "../../worker/run-analysis.js";
 import { tryRunWithGlobalMutex } from "../../worker/run-mutex.js";
 import { resolveLatestReportPath, readAndParseReportByPath } from "../services/reports-service.js";
-
-const ModeSchema = z.enum(["once", "away"]);
 
 @Route("analyze")
 export class AnalyzeController extends Controller {
@@ -19,7 +17,8 @@ export class AnalyzeController extends Controller {
     return this.run("away");
   }
 
-  private async run(mode: z.infer<typeof ModeSchema>): Promise<{ path: string; report: unknown }> {
+  private async run(mode: "once" | "away"): Promise<{ path: string; report: unknown }> {
+    AnalyzeModeSchema.parse(mode);
     const runResult = await tryRunWithGlobalMutex(async () => {
       if (mode === "away") {
         await runAwayAnalysis();

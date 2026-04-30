@@ -1,4 +1,5 @@
 import axios from "axios";
+import { z } from "zod";
 import { config } from "../../core/config.js";
 
 export type AiSecurityFinding = {
@@ -10,11 +11,34 @@ export type AiSecurityFinding = {
 
 export type AiSecurityReport = {
   suspicious: boolean;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  summary: string;
+  findings: AiSecurityFinding[];
+  recommendedActions: string[];
+};
+
+type AiSecurityReportWire = {
+  suspicious: boolean;
   risk_level: "low" | "medium" | "high" | "critical";
   summary: string;
   findings: AiSecurityFinding[];
   recommended_actions: string[];
 };
+
+const AiSecurityFindingSchema = z.object({
+  type: z.string(),
+  severity: z.enum(["low", "medium", "high", "critical"]),
+  details: z.string(),
+  evidence: z.array(z.string())
+});
+
+const AiSecurityReportWireSchema = z.object({
+  suspicious: z.boolean(),
+  risk_level: z.enum(["low", "medium", "high", "critical"]),
+  summary: z.string(),
+  findings: z.array(AiSecurityFindingSchema),
+  recommended_actions: z.array(z.string())
+});
 
 const schema = {
   name: "services_security_report",
@@ -53,16 +77,25 @@ const schema = {
 } as const;
 
 
-function parseStructuredContent(content: unknown): AiSecurityReport {
+export function parseAiSecurityReport(content: unknown): AiSecurityReport {
+  let parsedContent: unknown = content;
   if (typeof content === "string") {
-    return JSON.parse(content) as AiSecurityReport;
+    parsedContent = JSON.parse(content);
   }
 
-  if (typeof content === "object" && content !== null) {
-    return content as AiSecurityReport;
+  const parsedResult = AiSecurityReportWireSchema.safeParse(parsedContent);
+  if (!parsedResult.success) {
+    throw new Error("AI provider returned malformed structured response");
   }
+  const wireReport: AiSecurityReportWire = parsedResult.data;
 
-  throw new Error("AI provider returned unsupported message content format");
+  return {
+    suspicious: wireReport.suspicious,
+    riskLevel: wireReport.risk_level,
+    summary: wireReport.summary,
+    findings: wireReport.findings,
+    recommendedActions: wireReport.recommended_actions
+  };
 }
 
 export async function analyzeRawLogs(rawLogs: string[]): Promise<AiSecurityReport> {
@@ -118,5 +151,5 @@ export async function analyzeRawLogs(rawLogs: string[]): Promise<AiSecurityRepor
     throw new Error("AI provider returned empty structured response");
   }
 
-  return parseStructuredContent(content);
+  return parseAiSecurityReport(content);
 }

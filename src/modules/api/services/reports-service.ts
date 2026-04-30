@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { config } from "../../../core/config.js";
 import { readStateFile, writeStateFile } from "../../worker/state.js";
+import { ApiError } from "../errors.js";
 import { parseSecurityMarkdown, type ParsedReport } from "../report-parser.js";
 
 export type ReportRef = { name: string; path: string };
@@ -11,15 +12,6 @@ export type DeleteReportOptions = {
   reportPrefix: string;
   stateFilePath: string;
 };
-
-export class DeleteReportError extends Error {
-  constructor(
-    public readonly code: "invalid_name" | "not_found",
-    message: string
-  ) {
-    super(message);
-  }
-}
 
 export async function listReportFiles(): Promise<ReportRef[]> {
   const entries = await readdir(config.reportsDir, { withFileTypes: true });
@@ -65,14 +57,14 @@ export async function deleteReportByName(
   }
 ): Promise<{ deleted: true; path: string }> {
   if (!isSafeReportName(fileName, options.reportPrefix)) {
-    throw new DeleteReportError("invalid_name", "invalid report name");
+    throw new ApiError("invalid_report_name", "invalid report name");
   }
 
   const fullPath = path.join(options.reportsDir, fileName);
   try {
     await unlink(fullPath);
   } catch {
-    throw new DeleteReportError("not_found", "report not found");
+    throw new ApiError("not_found", "report not found");
   }
 
   try {

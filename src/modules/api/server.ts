@@ -6,7 +6,9 @@ import { URL } from "node:url";
 import { config } from "../../core/config.js";
 import { readStateFile } from "../worker/state.js";
 import { runAwayAnalysis, runOneShotAnalysis } from "../worker/run-analysis.js";
+import { ApiError, toApiErrorResponse } from "./errors.js";
 import { parseSecurityMarkdown } from "./report-parser.js";
+import { ReportFileNameSchema } from "./schemas.js";
 
 type Json = Record<string, unknown>;
 
@@ -62,7 +64,7 @@ async function listReportFiles(): Promise<{ name: string; path: string }[]> {
 let analysisRunning = false;
 async function runAnalysisAndReturnLatest(mode: "once" | "away"): Promise<{ path: string; report: unknown }> {
   if (analysisRunning) {
-    throw new Error("analysis_already_running");
+    throw new ApiError("analysis_already_running", "analysis already running");
   }
   analysisRunning = true;
   try {
@@ -77,7 +79,7 @@ async function runAnalysisAndReturnLatest(mode: "once" | "away"): Promise<{ path
 
   const latestPath = await resolveLatestReportPath();
   if (!latestPath) {
-    throw new Error("no_reports_found");
+    throw new ApiError("no_reports_found", "no reports found");
   }
   const parsed = await readAndParseReport(latestPath);
   return { path: latestPath, report: parsed };
@@ -125,11 +127,13 @@ export function createApiServer(): http.Server {
       }
 
       if (method === "GET" && pathname.startsWith("/reports/")) {
-        const fileName = decodeURIComponent(pathname.slice("/reports/".length));
-        if (!fileName || fileName.includes("/") || fileName.includes("..")) {
-          sendJson(res, 400, { error: "invalid_report_name" });
+        const rawFileName = decodeURIComponent(pathname.slice("/reports/".length));
+        const parsedName = ReportFileNameSchema.safeParse(rawFileName);
+        if (!parsedName.success) {
+          sendJson(res, 400, { error: "invalid_report_name", message: "invalid report name" });
           return;
         }
+        const fileName = parsedName.data;
 
         const reportPath = path.join(config.reportsDir, fileName);
         const parsed = await readAndParseReport(reportPath);
@@ -150,16 +154,8 @@ export function createApiServer(): http.Server {
         ]
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message === "analysis_already_running") {
-        sendJson(res, 409, { error: "analysis_already_running" });
-        return;
-      }
-      if (message === "no_reports_found") {
-        sendJson(res, 404, { error: "no_reports_found" });
-        return;
-      }
-      sendJson(res, 500, { error: "internal_error", message });
+      const mapped = toApiErrorResponse(error);
+      sendJson(res, mapped.status, mapped.body);
     }
   });
 }

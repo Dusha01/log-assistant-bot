@@ -1,19 +1,13 @@
 import { Controller, Delete, Get, Path, Route } from "tsoa";
-import { z } from "zod";
 
+import { ApiError, toApiErrorResponse } from "../errors.js";
+import { ReportFileNameSchema } from "../schemas.js";
 import {
   deleteReportByName,
-  DeleteReportError,
   listReportFiles,
   readAndParseReportByPath,
   resolveLatestReportPath
 } from "../services/reports-service.js";
-
-const ReportNameSchema = z
-  .string()
-  .min(1)
-  .regex(/^[A-Za-z0-9._-]+\.md$/)
-  .refine((name) => !name.includes(".."), "invalid");
 
 @Route("reports")
 export class ReportsController extends Controller {
@@ -36,7 +30,12 @@ export class ReportsController extends Controller {
 
   @Get("{fileName}")
   public async get(@Path() fileName: string): Promise<{ path: string; report: unknown }> {
-    const safeName = ReportNameSchema.parse(fileName);
+    const parsedName = ReportFileNameSchema.safeParse(fileName);
+    if (!parsedName.success) {
+      this.setStatus(400);
+      return { path: "", report: { error: "invalid_report_name" } };
+    }
+    const safeName = parsedName.data;
     const fullPath = (await listReportFiles()).find((r) => r.name === safeName)?.path;
     if (!fullPath) {
       this.setStatus(404);
@@ -49,21 +48,17 @@ export class ReportsController extends Controller {
   @Delete("{fileName}")
   public async delete(@Path() fileName: string): Promise<{ deleted: boolean; path: string; error?: string }> {
     try {
-      const safeName = ReportNameSchema.parse(fileName);
+      const parsedName = ReportFileNameSchema.safeParse(fileName);
+      if (!parsedName.success) {
+        throw new ApiError("invalid_report_name", "invalid report name");
+      }
+      const safeName = parsedName.data;
       const result = await deleteReportByName(safeName);
       return { deleted: true, path: result.path };
     } catch (error) {
-      if (error instanceof DeleteReportError) {
-        if (error.code === "invalid_name") {
-          this.setStatus(400);
-          return { deleted: false, path: "", error: "invalid_name" };
-        }
-        this.setStatus(404);
-        return { deleted: false, path: "", error: "not_found" };
-      }
-
-      this.setStatus(500);
-      return { deleted: false, path: "", error: "delete_failed" };
+      const mapped = toApiErrorResponse(error);
+      this.setStatus(mapped.status);
+      return { deleted: false, path: "", error: mapped.body.error };
     }
   }
 }

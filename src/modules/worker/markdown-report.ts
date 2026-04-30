@@ -19,7 +19,7 @@ export function formatMarkdownReport(params: { report: AiSecurityReport; meta: M
   lines.push(
     `files: ${meta.filesWithUpdates}/${meta.filesConsidered} updated, bytes_read=${meta.bytesRead}, lines=${meta.selectedLines} (dropped=${meta.droppedByLimit})`
   );
-  lines.push(`suspicious: ${report.suspicious ? "yes" : "no"}, risk_level: ${report.risk_level}`);
+  lines.push(`suspicious: ${report.suspicious ? "yes" : "no"}, risk_level: ${report.riskLevel}`);
   lines.push("");
 
   if (report.summary.trim().length > 0) {
@@ -40,10 +40,10 @@ export function formatMarkdownReport(params: { report: AiSecurityReport; meta: M
 
   lines.push("");
   lines.push("recommended_actions:");
-  if (report.recommended_actions.length === 0) {
+  if (report.recommendedActions.length === 0) {
     lines.push("1. Нет немедленных действий.");
   } else {
-    report.recommended_actions.forEach((a, idx) => lines.push(`${idx + 1}. ${a}`));
+    report.recommendedActions.forEach((a, idx) => lines.push(`${idx + 1}. ${a}`));
   }
   lines.push("");
 

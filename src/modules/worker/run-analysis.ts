@@ -50,10 +50,10 @@ export async function runOneShotAnalysis(deps: RunOneShotDeps = {}): Promise<voi
     collected.lines.length === 0
       ? ({
           suspicious: false,
-          risk_level: "low",
+          riskLevel: "low",
           summary: "Нет новых строк логов для анализа за этот интервал.",
           findings: [],
-          recommended_actions: ["Убедитесь, что бот имеет доступ к /var/log/nginx и что логи пишутся."]
+          recommendedActions: ["Убедитесь, что бот имеет доступ к /var/log/nginx и что логи пишутся."]
         } satisfies AiSecurityReport)
       : await analyzeLogs(collected.lines);
 

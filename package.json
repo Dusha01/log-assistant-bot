@@ -10,8 +10,7 @@
     "analyze:away": "tsx src/core/cli.ts --away",
     "tsoa:spec": "tsoa spec",
     "tsoa:routes": "tsoa routes",
-    "api": "npm run tsoa:spec && npm run tsoa:routes && tsx src/core/api.ts",
-    "test": "node --test --import tsx"
+    "api": "npm run tsoa:spec && npm run tsoa:routes && tsx src/core/api.ts"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
