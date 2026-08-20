@@ -1,57 +1,63 @@
-# log-assistant-bot
+# 🛡️ Log Assistant Bot
 
-> **Language:** [English](./README.en.md) | [Русский](./README.ru.md)
+> **Documentation language:** [🇷🇺 Русский](./README.md) | [🇬🇧 English](./README.en.md)
 
-Automated **nginx security log assistant** powered by an OpenAI-compatible AI API. The bot incrementally reads new log bytes from the filesystem, sends them for security analysis, and writes structured Markdown reports.
+![Node.js](https://img.shields.io/badge/Node.js-22+-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6+-3178C6?logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+
+Automated **nginx security log assistant** powered by an OpenAI-compatible AI API 🤖. The bot incrementally reads new log bytes from the filesystem, sends them for security analysis, and writes structured Markdown reports.
 
 Designed to run on a server (including Docker) on a cron schedule or on demand via CLI/API.
 
 ---
 
-## Table of contents
+## 📑 Table of Contents
 
-1. [What it does](#what-it-does)
-2. [Architecture](#architecture)
-3. [Requirements](#requirements)
-4. [Project structure](#project-structure)
-5. [Installation](#installation)
-6. [Configuration](#configuration)
-7. [Running the worker (CLI)](#running-the-worker-cli)
-8. [Docker deployment](#docker-deployment)
-9. [HTTP API](#http-api)
-10. [Reports](#reports)
-11. [Checkpoint state files](#checkpoint-state-files)
-12. [AI integration](#ai-integration)
-13. [Limits and concurrency](#limits-and-concurrency)
-14. [Security notes](#security-notes)
-15. [Troubleshooting](#troubleshooting)
+- [What it does](#what-it-does)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the Worker (CLI)](#running-the-worker-cli)
+- [Docker Deployment](#docker-deployment)
+- [HTTP API](#http-api)
+- [Reports](#reports)
+- [Checkpoint State Files](#checkpoint-state-files)
+- [AI Integration](#ai-integration)
+- [Limits and Concurrency](#limits-and-concurrency)
+- [Security Notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-## What it does
+## 🎯 What it does
 
-1. **Discovers log files** — recursively walks `NGINX_LOG_ROOT` and collects all `*.log` files (including nested vhost directories and `archived/` folders).
-2. **Reads incrementally** — for each file, reads only bytes added since the last run using a JSON checkpoint (offset + inode). Handles log rotation (inode change or size shrink resets the checkpoint).
-3. **Labels lines** — each log line is prefixed with a relative path tag, e.g. `[domen.ru/access.log] 1.2.3.4 - - [...]`.
-4. **Sends to AI** — raw lines are passed to an OpenAI-compatible `/chat/completions` endpoint with a strict JSON schema for structured security findings.
-5. **Writes a report** — a Markdown file `security-report-<timestamp>.md` is saved to `REPORTS_DIR`; a short summary is printed to stdout.
-6. **Schedules runs** — in default mode, analysis runs immediately on startup and then on a cron schedule (`CRON_SCHEDULE`, default every 2 hours).
-7. **Cleans up old reports** — deletes reports older than `REPORT_RETENTION_DAYS` (after each analysis or on a separate cron).
+1. 🔍 **Discovers log files** — recursively walks `NGINX_LOG_ROOT` and collects all `*.log` files (including nested vhost directories and `archived/` folders).
+2. 📖 **Reads incrementally** — for each file, reads only bytes added since the last run using a JSON checkpoint (offset + inode). Handles log rotation (inode change or size shrink resets the checkpoint).
+3. 🏷️ **Labels lines** — each log line is prefixed with a relative path tag, e.g. `[domen.ru/access.log] 1.2.3.4 - - [...]`.
+4. 🤖 **Sends to AI** — raw lines are passed to an OpenAI-compatible `/chat/completions` endpoint with a strict JSON schema for structured security findings.
+5. 📝 **Writes a report** — a Markdown file `security-report-<timestamp>.md` is saved to `REPORTS_DIR`; a short summary is printed to stdout.
+6. ⏰ **Schedules runs** — in default mode, analysis runs immediately on startup and then on a cron schedule (`CRON_SCHEDULE`, default every 2 hours).
+7. 🧹 **Cleans up old reports** — deletes reports older than `REPORT_RETENTION_DAYS` (after each analysis or on a separate cron).
 
-### Analysis modes
+### 🔄 Analysis Modes
 
-| Mode | CLI flag | API endpoint | Checkpoint file | Behavior |
+| Mode | CLI Flag | API Endpoint | Checkpoint File | Behavior |
 |------|----------|--------------|-----------------|----------|
-| **Main (incremental)** | `--once` / default cron | `POST /analyze/once` | `STATE_FILE_PATH` | Reads only new bytes since last run |
+| **Main (incremental)** | `--once` / default cron | `POST /analyze/once` | `STATE_FILE_PATH` | Only new bytes since last run |
 | **Away (separate incremental)** | `--away` | `POST /analyze/away` | `AWAY_STATE_FILE_PATH` | Same incremental logic, independent checkpoint — useful for manual/on-demand runs without affecting the main schedule |
 
 Both modes use the same pipeline (`runOneShotAnalysis`); only the checkpoint file differs.
 
-When no new log lines are found, a report is still generated with `suspicious: false` and a low-risk summary.
+> 💡 When no new log lines are found, a report is still generated with `suspicious: false` and a low-risk summary.
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TB
@@ -88,7 +94,7 @@ flowchart TB
     EXPRESS --> SWAGGER
 ```
 
-### Modules && layout
+### 📦 Modules
 
 | Path | Purpose |
 |------|---------|
@@ -110,17 +116,20 @@ flowchart TB
 
 ---
 
-## Requirements
+## ⚙️ Requirements
 
-- **Node.js** 22+ (used in Docker; local 20+ should work)
-- **npm**
-- Read access to nginx log directory (typically `/var/log/nginx`)
-- **OpenAI-compatible API key** (`OPEN_AI_KEY`) — OpenAI, AITunnel, local proxy, etc.
-- For Docker: host path `/var/log/nginx` mounted read-only into the container
+| Dependency | Version | Notes |
+|------------|---------|-------|
+| **Node.js** | 22+ | In Docker; locally 20+ usually works |
+| **npm** | — | For installing dependencies |
+| **Log access** | — | Read permissions on `/var/log/nginx` |
+| **AI API key** | — | `OPEN_AI_KEY` — OpenAI, AITunnel, local proxy, etc. |
+
+> 🐳 For Docker: mount `/var/log/nginx` from host into container (read-only).
 
 ---
 
-## Project structure
+## 📁 Project Structure
 
 ```
 log-assistant-bot/
@@ -134,16 +143,15 @@ log-assistant-bot/
 │   ├── docker-compose.yml
 │   └── .env.example
 ├── .env.example
-├── README.md           # Quick start + links
-├── README.en.md        # This file
-└── README.ru.md        # Russian documentation
+├── README.md           # Russian documentation
+└── README.en.md        # This file
 ```
 
 ---
 
-## Installation
+## 🚀 Installation
 
-### Local (without Docker)
+### 💻 Local (without Docker)
 
 ```bash
 git clone <repository-url>
@@ -153,13 +161,13 @@ cp .env.example .env
 npm install
 ```
 
-### Verify one-shot run
+### ✅ Verify one-shot run
 
 ```bash
 npm run analyze:once
 ```
 
-Expected output: terminal summary (if new logs exist) and a path to the Markdown report, e.g.:
+Expected output: terminal summary (if new logs exist) and a path to the Markdown report:
 
 ```
 Markdown report written to: /path/to/security-report-2026-05-24T12-00-00.000Z.md
@@ -167,13 +175,13 @@ Markdown report written to: /path/to/security-report-2026-05-24T12-00-00.000Z.md
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 All settings are loaded from environment variables (via `dotenv` from `.env` in the project root).
 
 Copy `.env.example` to `.env` for local runs, or `Docker/.env.example` to `Docker/.env` for Docker.
 
-### AI provider
+### 🤖 AI Provider
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -182,7 +190,8 @@ Copy `.env.example` to `.env` for local runs, or `Docker/.env.example` to `Docke
 | `OPEN_AI_MODEL` | No | `gpt-4o-mini` | Model name |
 | `OPEN_AI_TIMEOUT_MS` | No | `120000` | HTTP timeout for AI requests (ms) |
 
-Example for AITunnel:
+<details>
+<summary>📌 Example for AITunnel</summary>
 
 ```env
 OPEN_AI_KEY="your-key"
@@ -190,8 +199,9 @@ OPEN_AI_BASE_URL="https://api.aitunnel.ru/v1/"
 OPEN_AI_MODEL="qwen3.5-9b"
 OPEN_AI_TIMEOUT_MS=180000
 ```
+</details>
 
-### Logs and checkpoints
+### 📂 Logs and Checkpoints
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -199,7 +209,7 @@ OPEN_AI_TIMEOUT_MS=180000
 | `STATE_FILE_PATH` | `<cwd>/.log-assistant.state.json` | Main incremental checkpoint |
 | `AWAY_STATE_FILE_PATH` | `<cwd>/.log-assistant-away.state.json` | Separate checkpoint for away/on-demand mode |
 
-### Reports
+### 📝 Reports
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -208,7 +218,7 @@ OPEN_AI_TIMEOUT_MS=180000
 | `REPORT_RETENTION_DAYS` | `30` | Delete reports older than N days |
 | `REPORT_CLEANUP_CRON` | *(empty)* | Optional cron for cleanup; if empty, cleanup runs after each scheduled analysis |
 
-### Scheduling
+### ⏰ Scheduling
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -216,23 +226,23 @@ OPEN_AI_TIMEOUT_MS=180000
 
 Uses [node-cron](https://www.npmjs.com/package/node-cron) syntax (standard 5-field cron).
 
-### Volume limits (per run)
+### 📊 Volume Limits (per run)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MAX_LOG_LINES_PER_RUN` | `1000` | Max log lines sent to AI (keeps the most recent if exceeded) |
 | `MAX_LOG_BYTES_PER_RUN` | `2000000` | Max bytes read across all files per run |
 
-### HTTP API
+### 🌐 HTTP API
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `API_HOST` | `0.0.0.0` | Listen address |
 | `API_PORT` | `3010` | Listen port |
 
-### Legacy (backward compatibility)
+### 🕰️ Legacy (backward compatibility)
 
-These are kept in config but **not used** by the main incremental pipeline:
+Not used by the main incremental pipeline:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -243,29 +253,29 @@ Functions `collectRecentNginxLogs` and `collectRecentNginxLogsFromDocker` in `lo
 
 ---
 
-## Running the worker (CLI)
+## ▶️ Running the Worker (CLI)
 
 | Command | Description |
 |---------|-------------|
-| `npm start` | Default: **cron mode** — run immediately, then on `CRON_SCHEDULE` |
+| `npm start` | **Default: cron mode** — run immediately, then on `CRON_SCHEDULE` |
 | `npm run analyze:once` | One-shot incremental analysis (main checkpoint) |
 | `npm run analyze:away` | One-shot analysis using away checkpoint |
 | `npm run analyze:cron` | Explicit cron mode (same as `npm start`) |
 | `npm run api` | Regenerate OpenAPI spec/routes and start API server |
-| `npm run build` | Compile TypeScript to `built/` |
+| `npm run build` | Compile TypeScript |
 
-### Cron behavior
+### 🔄 Cron Behavior
 
 1. On startup: runs analysis once immediately.
 2. Schedules analysis on `CRON_SCHEDULE`.
 3. If `REPORT_CLEANUP_CRON` is set — schedules separate cleanup; otherwise cleanup runs after each analysis job.
 4. Process stays alive (suitable for Docker `restart: unless-stopped`).
 
-Parallel runs are prevented by a global in-process mutex.
+> 🔒 Parallel runs are prevented by a global in-process mutex.
 
 ---
 
-## Docker deployment
+## 🐳 Docker Deployment
 
 Two services in `Docker/docker-compose.yml`:
 
@@ -274,7 +284,7 @@ Two services in `Docker/docker-compose.yml`:
 | `log-assistant-bot` | `npm start` | — | Cron worker |
 | `log-assistant-api` | `npm run api` | `3010:3010` | REST API + Swagger |
 
-### Setup
+### 🚀 Setup
 
 ```bash
 cp Docker/.env.example Docker/.env
@@ -283,25 +293,23 @@ cp Docker/.env.example Docker/.env
 docker compose -f Docker/docker-compose.yml up -d
 ```
 
-### Volumes
+### 💾 Volumes
 
-- `..:/app` — project root (code, reports, checkpoint files)
-- `/var/log/nginx:/var/log/nginx:ro` — nginx logs (read-only)
-- `log_assistant_node_modules` — named volume for `node_modules`
+| Volume | Description |
+|--------|-------------|
+| `..:/app` | Project root (code, reports, checkpoint files) |
+| `/var/log/nginx:/var/log/nginx:ro` | nginx logs (read-only) |
+| `log_assistant_node_modules` | Named volume for `node_modules` |
 
-### Persisted data
-
-Mount or ensure the project directory persists:
+### 📌 Persisted Data
 
 - `STATE_FILE_PATH` → default `/app/.log-assistant.state.json`
-- `AWAY_STATE_FILE_PATH` → default `/app/.log-assistant-away.state.json`
-- `REPORTS_DIR` → default `/app` (report `*.md` files)
+- `AWAY_STATE_FILE_PATH` → `/app/.log-assistant-away.state.json`
+- `REPORTS_DIR` → `/app` (report `*.md` files)
 
-Without persistence, checkpoints and reports are lost on container recreation.
+> ⚠️ Without persistence, checkpoints and reports are lost on container recreation.
 
-### Environment overrides in compose
-
-`docker-compose.yml` sets:
+### ⚙️ Environment Overrides in Compose
 
 ```yaml
 NGINX_LOG_ROOT: /var/log/nginx
@@ -315,7 +323,7 @@ Additional variables come from `Docker/.env`.
 
 ---
 
-## HTTP API
+## 🌐 HTTP API
 
 Start locally:
 
@@ -327,9 +335,9 @@ npm run api
 - Swagger UI: `http://localhost:3010/docs`
 - OpenAPI spec: `src/modules/api/generated/openapi.json`
 
-**There is no authentication** on API endpoints — restrict access via firewall, reverse proxy, or VPN in production.
+> ⚠️ **There is no authentication** on API endpoints — restrict access via firewall, reverse proxy, or VPN in production.
 
-### Endpoints
+### 📡 Endpoints
 
 #### `GET /health`
 
@@ -406,9 +414,9 @@ Trigger away-mode incremental analysis (separate checkpoint).
 }
 ```
 
-### Error responses
+### ❌ Error Codes
 
-| HTTP | `error` code | When |
+| HTTP | `error` Code | When |
 |------|--------------|------|
 | 400 | `invalid_report_name` | Invalid report filename |
 | 404 | `no_reports_found` | No reports exist |
@@ -427,9 +435,9 @@ Example:
 
 ---
 
-## Reports
+## 📋 Reports
 
-### Filename
+### 🏷️ Filename
 
 ```
 {REPORT_PREFIX}-{ISO-timestamp-with-colons-replaced}.md
@@ -437,7 +445,7 @@ Example:
 
 Example: `security-report-2026-05-24T14-30-00.000Z.md`
 
-### Markdown structure
+### 📄 Markdown Structure
 
 ```markdown
 # nginx security report
@@ -455,11 +463,11 @@ recommended_actions:
 2. Action two
 ```
 
-On first run, `window` starts with `first-run` instead of a timestamp.
+> 💡 On first run, `window` starts with `first-run` instead of a timestamp.
 
 The API parses this Markdown back into structured JSON (`report-parser.ts`).
 
-### Terminal output
+### 🖥️ Terminal Output
 
 When logs are found, a human-readable summary is printed:
 
@@ -472,7 +480,7 @@ RISK LEVEL: HIGH
 
 ---
 
-## Checkpoint state files
+## 📁 Checkpoint State Files
 
 Format: JSON v1 (`state.ts`).
 
@@ -493,7 +501,7 @@ Format: JSON v1 (`state.ts`).
 }
 ```
 
-### Checkpoint reset conditions
+### 🔄 Checkpoint Reset Conditions
 
 Per file, the offset resets to `0` when:
 
@@ -501,18 +509,18 @@ Per file, the offset resets to `0` when:
 - **Inode changed** (log rotation / new file)
 - **File size < saved offset** (truncation)
 
-Partial lines at chunk boundaries are stored in memory (`leftover`) and completed on the next read.
+> 📝 Partial lines at chunk boundaries are stored in memory (`leftover`) and completed on the next read.
 
 ---
 
-## AI integration
+## 🤖 AI Integration
 
 - Endpoint: `POST {OPEN_AI_BASE_URL}/chat/completions`
 - Response format: `json_schema` with strict schema `services_security_report`
 - System prompt (Russian): security log analyzer for nginx
 - Validated with **Zod** after response
 
-### Report schema (logical)
+### 📐 Report Schema (logical)
 
 ```typescript
 {
@@ -529,11 +537,11 @@ Partial lines at chunk boundaries are stored in memory (`leftover`) and complete
 }
 ```
 
-AI looks for patterns such as: vulnerability scanning, path traversal, RCE attempts, sensitive file probing (`.env`), scanner user-agents, protocol anomalies, etc.
+> 🔎 AI looks for patterns such as: vulnerability scanning, path traversal, RCE attempts, sensitive file probing (`.env`), scanner user-agents, protocol anomalies, etc.
 
 ---
 
-## Limits and concurrency
+## 🚦 Limits and Concurrency
 
 - **Line limit**: if collected lines exceed `MAX_LOG_LINES_PER_RUN`, the **most recent** lines are kept.
 - **Byte limit**: reading stops when `MAX_LOG_BYTES_PER_RUN` is exhausted (files processed in sorted path order).
@@ -542,19 +550,21 @@ AI looks for patterns such as: vulnerability scanning, path traversal, RCE attem
 
 ---
 
-## Security notes
+## 🔒 Security Notes
 
-1. **API has no auth** — do not expose port `3010` publicly without protection.
-2. **Logs are read-only** in Docker (`:ro` mount) — the bot never modifies nginx logs.
-3. **Secrets in `.env`** — never commit `.env` or `Docker/.env` (listed in `.gitignore`).
-4. **Log content sent to third-party AI** — ensure compliance with your data policy; consider self-hosted models.
-5. **Report filenames** are validated to prevent path traversal (`..` rejected).
+| # | Rule |
+|---|------|
+| 1 | ⚠️ **API has no auth** — do not expose port `3010` publicly without protection. |
+| 2 | 📖 **Logs are read-only** in Docker (`:ro` mount) — the bot never modifies nginx logs. |
+| 3 | 🔑 **Secrets in `.env`** — never commit `.env` or `Docker/.env` (listed in `.gitignore`). |
+| 4 | 🌐 **Log content sent to third-party AI** — ensure compliance with your data policy; consider self-hosted models. |
+| 5 | 🛡️ **Report filenames** are validated to prevent path traversal (`..` rejected). |
 
 ---
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-| Problem | Possible cause | Solution |
+| Problem | Possible Cause | Solution |
 |---------|----------------|----------|
 | `AI provider is required` | Missing `OPEN_AI_KEY` | Set key in `.env` |
 | `AI provider request failed` | Wrong URL/model/key or timeout | Check `OPEN_AI_*` settings, increase `OPEN_AI_TIMEOUT_MS` |
@@ -564,13 +574,13 @@ AI looks for patterns such as: vulnerability scanning, path traversal, RCE attem
 | Checkpoint re-reads old data | State file deleted | Expected on first run; inode/size reset also re-reads from start |
 | API 404 on `/reports/latest` | No reports generated yet | Run `npm run analyze:once` first |
 
-### Useful commands
+### 🧰 Useful Commands
 
 ```bash
-# Check discovered logs (requires node/tsx)
+# One-shot analysis
 npm run analyze:once
 
-# API health
+# Health API
 curl http://localhost:3010/health
 
 # Trigger analysis via API
@@ -582,6 +592,6 @@ curl http://localhost:3010/reports
 
 ---
 
-## License
+## 📄 License
 
-See [LICENSE](./LICENSE).
+[MIT License](./LICENSE) — Copyright (c) 2026 Dusha_01
