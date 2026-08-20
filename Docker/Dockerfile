@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.json tsoa.json ./
+COPY tsconfig.json tsconfig.build.json tsoa.json ./
 COPY src/ ./src/
 RUN npm run build
 
